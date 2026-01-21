@@ -1,0 +1,9 @@
+@import "tailwindcss";
+@import "@fontsource-variable/pixelify-sans";
+
+body {
+  background-color: black;
+  min-height: 100vh;
+  font-family: "Pixelify Sans Variable", monospace;
+  color: white;
+}
