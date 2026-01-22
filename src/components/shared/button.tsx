@@ -1,7 +1,10 @@
+import type { ReactNode } from "react";
+
 type ButtonProps = {
   label: string;
   onClick: () => void;
 };
+
 export function Button({ label, onClick }: ButtonProps) {
   return (
     <button
@@ -13,4 +16,18 @@ export function Button({ label, onClick }: ButtonProps) {
   );
 }
 
-export function IconButton() {}
+type IconButton = {
+  icon: ReactNode;
+  onClick: () => void;
+};
+
+export function IconButton({ icon, onClick }: IconButton) {
+  return (
+    <button
+      className="size-10 bg-white/20 cursor-pointer hover:brightness-90 active:brightness-100"
+      onClick={onClick}
+    >
+      {icon}
+    </button>
+  );
+}

@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { HomeScreen } from "./components/screens/home";
+import { GameScreen } from "./components/screens/game";
 
 export default function App() {
   const [isHomePage, setIsHomePage] = useState(true);
 
   return (
-    <div className="w-screen h-screen flex flex-col items-center justify-center gap-20 overflow-hidden">
+    <div>
       <HomeScreen show={isHomePage} onStart={() => setIsHomePage(false)} />
+      <GameScreen show={!isHomePage} />
     </div>
   );
 }
