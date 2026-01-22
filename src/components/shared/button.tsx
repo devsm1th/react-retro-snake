@@ -24,7 +24,7 @@ type IconButton = {
 export function IconButton({ icon, onClick }: IconButton) {
   return (
     <button
-      className="size-10 bg-white/20 cursor-pointer hover:brightness-90 active:brightness-100"
+      className="flex items-center justify-center size-10 bg-white/20 cursor-pointer hover:brightness-90 active:brightness-100"
       onClick={onClick}
     >
       {icon}

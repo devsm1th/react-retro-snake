@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { cn } from "../../lib/utils/cn";
 import { IconButton } from "../shared/button";
+import { ArrowUp } from "../shared/icons/arrow-up";
 
 const KEYS = {
   left: "ArrowLeft",
@@ -144,12 +145,21 @@ export function GameScreen({ show }: GameScreenProps) {
       </div>
 
       <div className="flex flex-col items-center text-2xl">
-        <IconButton icon={<>&uarr;</>} onClick={setVelUp} />
+        <IconButton icon={<ArrowUp />} onClick={setVelUp} />
         <div className="flex gap-10">
-          <IconButton icon={<>&larr;</>} onClick={setVelLeft} />
-          <IconButton icon={<>&rarr;</>} onClick={setVelRight} />
+          <IconButton
+            icon={<ArrowUp className="-rotate-90" />}
+            onClick={setVelLeft}
+          />
+          <IconButton
+            icon={<ArrowUp className="rotate-90" />}
+            onClick={setVelRight}
+          />
         </div>
-        <IconButton icon={<>&darr;</>} onClick={setVelDown} />
+        <IconButton
+          icon={<ArrowUp className="rotate-180" />}
+          onClick={setVelDown}
+        />
       </div>
     </div>
   );
