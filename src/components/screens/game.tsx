@@ -2,59 +2,46 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "../../lib/utils/cn";
 import { IconButton } from "../shared/button";
 import { ArrowUp } from "../shared/icons/arrow-up";
-
-const KEYS = {
-  left: "ArrowLeft",
-  up: "ArrowUp",
-  right: "ArrowRight",
-  down: "ArrowDown",
-} as const;
-
-const handleOutOfBounds = (value: number, max: number) => {
-  if (value < 0) return max - 1;
-  else if (value > max - 1) return 0;
-  return value;
-};
-
-type Vec2 = { x: number; y: number };
-type Snake = Vec2[];
-
-const createGrid = (w: number, h: number) => {
-  const grid: number[][] = [];
-
-  for (let i = 0; i < h; i++) {
-    grid.push([]);
-    for (let j = 0; j < w; j++) {
-      grid[i].push(0);
-    }
-  }
-
-  return grid;
-};
+import {
+  createGrid,
+  getEmptyPositions,
+  getSnakePositions,
+  handleOutOfBounds,
+  isSamePosition,
+  type Snake,
+  type Vec2,
+} from "../../lib/utils/helpers";
+import { KEYS } from "../../lib/constants";
+import { useSFX } from "../../lib/hooks/use-sfx";
 
 type GameScreenProps = {
   show: boolean;
 };
 
 export function GameScreen({ show }: GameScreenProps) {
+  const player = useSFX();
+
   const width = 24;
   const height = 24;
 
   const [grid, setGrid] = useState(createGrid(width, height));
 
-  const snake = useRef<Snake>([
-    {
-      x: Math.floor(width / 2),
-      y: Math.floor(height / 2),
-    },
-  ]);
+  const snake = useRef<Snake>({
+    positions: [
+      {
+        x: Math.floor(width / 2),
+        y: Math.floor(height / 2),
+      },
+    ],
+    length: 1,
+  });
   const vel = useRef<Vec2[]>([{ x: 1, y: 0 }]);
   const lastKeyPressAt = useRef<number>(Date.now());
+  const ticksCount = useRef<number>(0);
+  const apple = useRef<Vec2 | null>(null);
 
   const setVel = (x: number, y: number, threshold = 200) => {
     const now = Date.now();
-
-    console.log(now - lastKeyPressAt.current);
 
     if (now - lastKeyPressAt.current < threshold) {
       vel.current.push({ x, y });
@@ -75,24 +62,60 @@ export function GameScreen({ show }: GameScreenProps) {
 
       const newGrid = createGrid(width, height);
 
-      snake.current = snake.current.map((cell) => {
-        const v = vel.current[0];
+      // Update snake position
+      const v = vel.current[0];
 
-        if (vel.current.length > 1) {
-          vel.current.splice(0, 1);
+      const nextCell = {
+        x: handleOutOfBounds(snake.current.positions.at(-1)!.x + v.x, width),
+        y: handleOutOfBounds(snake.current.positions.at(-1)!.y + v.y, height),
+      };
+
+      if (vel.current.length > 1) {
+        vel.current.splice(0, 1);
+      }
+
+      // Check if apple is touched
+      if (apple.current && isSamePosition(nextCell, apple.current)) {
+        apple.current = null;
+        snake.current.length++;
+        player.play("score");
+      }
+
+      snake.current.positions = [...snake.current.positions, nextCell];
+
+      if (snake.current.positions.length > width * height) {
+        snake.current.positions = snake.current.positions.slice(
+          snake.current.positions.length - width * height
+        );
+      }
+
+      // Calculate new apple position
+      if (ticksCount.current % Math.max(width, height) === 0) {
+        const occupiedCells = getSnakePositions(snake.current);
+        const emptyPositions = getEmptyPositions(width, height, occupiedCells);
+
+        if (!emptyPositions.length) {
+          alert("TODO: we need to handle this");
+          return;
         }
 
-        return {
-          x: handleOutOfBounds(cell.x + v.x, width),
-          y: handleOutOfBounds(cell.y + v.y, height),
-        };
-      });
+        const getRandomPosition = () =>
+          emptyPositions[Math.round(Math.random() * emptyPositions.length)];
 
-      snake.current.forEach((cell) => {
+        apple.current = getRandomPosition();
+      }
+
+      // draw snake on screen
+      getSnakePositions(snake.current).forEach((cell) => {
         newGrid[cell.y][cell.x] = 1;
       });
 
+      // draw apple on screen
+      if (apple.current) newGrid[apple.current.y][apple.current.x] = 2;
+
       setGrid(newGrid);
+
+      ticksCount.current++;
     };
 
     const handle = setInterval(tick, 150);
@@ -135,7 +158,9 @@ export function GameScreen({ show }: GameScreenProps) {
               <div
                 className={cn(
                   "size-4 transition-all duration-75",
-                  cell ? "bg-white" : "bg-white/20"
+                  cell === 0 && "bg-white/20",
+                  cell === 1 && "bg-white",
+                  cell === 2 && "bg-yellow-400"
                 )}
                 key={`${i}-${j}`}
               />
