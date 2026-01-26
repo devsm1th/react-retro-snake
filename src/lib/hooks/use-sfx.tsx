@@ -1,10 +1,10 @@
 import { useEffect, useRef } from "react";
 
 const SFX = {
-  select: "/sfx/select.mp3",
-  score: "/sfx/score.mp3",
-  lose: "/sfx/lose.mp3",
-  win: "/sfx/win.mp3",
+  select: "./sfx/select.mp3",
+  score: "./sfx/score.mp3",
+  lose: "./sfx/lose.mp3",
+  win: "./sfx/win.mp3",
 } as const;
 
 export function useSFX() {
