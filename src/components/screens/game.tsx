@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "../../lib/utils/cn";
-import { IconButton } from "../shared/button";
+import { Button, IconButton } from "../shared/button";
 import { ArrowUp } from "../shared/icons/arrow-up";
 import {
   createGrid,
@@ -11,7 +11,7 @@ import {
   type Snake,
   type Vec2,
 } from "../../lib/utils/helpers";
-import { KEYS } from "../../lib/constants";
+import { CELL, KEYS } from "../../lib/constants";
 import { useSFX } from "../../lib/hooks/use-sfx";
 
 type GameScreenProps = {
@@ -25,6 +25,8 @@ export function GameScreen({ show }: GameScreenProps) {
   const height = 24;
 
   const [grid, setGrid] = useState(createGrid(width, height));
+  const [isGameOver, setIsGameOver] = useState(false);
+  const [isWin, setIsWin] = useState(false);
 
   const snake = useRef<Snake>({
     positions: [
@@ -40,8 +42,37 @@ export function GameScreen({ show }: GameScreenProps) {
   const ticksCount = useRef<number>(0);
   const apple = useRef<Vec2 | null>(null);
 
+  const resetGame = useCallback(() => {
+    setIsGameOver(false);
+    snake.current = {
+      positions: [
+        {
+          x: Math.floor(width / 2),
+          y: Math.floor(height / 2),
+        },
+      ],
+      length: 1,
+    };
+    vel.current = [{ x: 1, y: 0 }];
+    ticksCount.current = 0;
+    apple.current = null;
+  }, []);
+
   const setVel = (x: number, y: number, threshold = 200) => {
     const now = Date.now();
+
+    const head = snake.current.positions.at(-1)!;
+    const beforeHead = snake.current.positions.at(-2);
+
+    if (
+      beforeHead &&
+      isSamePosition(beforeHead, {
+        x: handleOutOfBounds(head.x + x, width),
+        y: handleOutOfBounds(head.y + y, height),
+      })
+    ) {
+      return;
+    }
 
     if (now - lastKeyPressAt.current < threshold) {
       vel.current.push({ x, y });
@@ -58,7 +89,9 @@ export function GameScreen({ show }: GameScreenProps) {
 
   useEffect(() => {
     const tick = () => {
-      if (show) return;
+      if (!show || isGameOver) return;
+
+      let isSnakeDead = false;
 
       const newGrid = createGrid(width, height);
 
@@ -81,6 +114,18 @@ export function GameScreen({ show }: GameScreenProps) {
         player.play("score");
       }
 
+      // Check if snake touched it self
+      if (
+        getSnakePositions(snake.current).some((cell) =>
+          isSamePosition(cell, nextCell)
+        )
+      ) {
+        setIsGameOver(true);
+        setIsWin(false);
+        isSnakeDead = true;
+        player.play("lose");
+      }
+
       snake.current.positions = [...snake.current.positions, nextCell];
 
       if (snake.current.positions.length > width * height) {
@@ -90,12 +135,17 @@ export function GameScreen({ show }: GameScreenProps) {
       }
 
       // Calculate new apple position
-      if (ticksCount.current % Math.max(width, height) === 0) {
+      if (
+        !apple.current ||
+        (ticksCount.current % Math.max(width, height)) * 2 === 0
+      ) {
         const occupiedCells = getSnakePositions(snake.current);
         const emptyPositions = getEmptyPositions(width, height, occupiedCells);
 
         if (!emptyPositions.length) {
-          alert("TODO: we need to handle this");
+          setIsGameOver(true);
+          setIsWin(true);
+          player.play("win");
           return;
         }
 
@@ -107,11 +157,17 @@ export function GameScreen({ show }: GameScreenProps) {
 
       // draw snake on screen
       getSnakePositions(snake.current).forEach((cell) => {
-        newGrid[cell.y][cell.x] = 1;
+        newGrid[cell.y][cell.x] = CELL.snake;
       });
 
       // draw apple on screen
-      if (apple.current) newGrid[apple.current.y][apple.current.x] = 2;
+      if (apple.current) newGrid[apple.current.y][apple.current.x] = CELL.apple;
+
+      // draw intersection
+      if (isSnakeDead) {
+        const head = snake.current.positions.at(-1)!;
+        newGrid[head.y][head.x] = CELL.dead;
+      }
 
       setGrid(newGrid);
 
@@ -142,7 +198,7 @@ export function GameScreen({ show }: GameScreenProps) {
     };
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [show, isGameOver]);
 
   return (
     <div
@@ -158,9 +214,10 @@ export function GameScreen({ show }: GameScreenProps) {
               <div
                 className={cn(
                   "size-4 transition-all duration-75",
-                  cell === 0 && "bg-white/20",
-                  cell === 1 && "bg-white",
-                  cell === 2 && "bg-yellow-400"
+                  cell === CELL.empty && "bg-white/20",
+                  cell === CELL.snake && "bg-white",
+                  cell === CELL.apple && "bg-yellow-400",
+                  cell === CELL.dead && "bg-red-400"
                 )}
                 key={`${i}-${j}`}
               />
@@ -186,6 +243,27 @@ export function GameScreen({ show }: GameScreenProps) {
           onClick={setVelDown}
         />
       </div>
+
+      {show && (
+        <div
+          className={cn(
+            "absolute top-0 left-0 w-full h-full bg-black/50 flex flex-col items-center justify-center gap-8 transition-all duration-500",
+            isGameOver
+              ? "opacity-100 pointer-events-auto"
+              : "opacity-0 pointer-events-none"
+          )}
+        >
+          <h2
+            className={cn(
+              "text-6xl",
+              isWin ? "text-green-400" : "text-red-400"
+            )}
+          >
+            {isWin ? "YOU WON!" : "GAME OVER!"}
+          </h2>
+          <Button label="Play again" onClick={resetGame} />
+        </div>
+      )}
     </div>
   );
 }

@@ -1,3 +1,5 @@
+import { CELL } from "../constants";
+
 export const handleOutOfBounds = (value: number, max: number) => {
   if (value < 0) return max - 1;
   else if (value > max - 1) return 0;
@@ -50,7 +52,7 @@ export const createGrid = (w: number, h: number) => {
   for (let i = 0; i < h; i++) {
     grid.push([]);
     for (let j = 0; j < w; j++) {
-      grid[i].push(0);
+      grid[i].push(CELL.empty);
     }
   }
 
