@@ -1,10 +1,14 @@
 import { useEffect, useRef } from "react";
+import selectSound from "../../assets/sfx/select.mp3";
+import scoreSound from "../../assets/sfx/score.mp3";
+import loseSound from "../../assets/sfx/lose.mp3";
+import winSound from "../../assets/sfx/win.mp3";
 
 const SFX = {
-  select: "./sfx/select.mp3",
-  score: "./sfx/score.mp3",
-  lose: "./sfx/lose.mp3",
-  win: "./sfx/win.mp3",
+  select: selectSound,
+  score: scoreSound,
+  lose: loseSound,
+  win: winSound,
 } as const;
 
 export function useSFX() {

@@ -137,7 +137,7 @@ export function GameScreen({ show }: GameScreenProps) {
       // Calculate new apple position
       if (
         !apple.current ||
-        (ticksCount.current % Math.max(width, height)) * 2 === 0
+        (!apple.current && ticksCount.current % (Math.max(width, height) * 2) === 0)
       ) {
         const occupiedCells = getSnakePositions(snake.current);
         const emptyPositions = getEmptyPositions(width, height, occupiedCells);
